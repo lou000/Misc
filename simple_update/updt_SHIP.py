@@ -79,53 +79,42 @@ def copyTree(src, dst, logfile, prevfilecount):
                 forceMergeFlatDir(s, d, logfile, prevfilecount)
 
 
-def main(argv):
+def main():
     kernel32 = ctypes.windll.kernel32
     kernel32.SetConsoleMode(kernel32.GetStdHandle(-11), 7)
-    updateflag = False
-    try:
-        opts, args = getopt.getopt(argv, "", ["update"])
-    except getopt.GetoptError:
-        print('Wrong argument. Use -update')
-        sys.exit(2)
-    for opt, arg in opts:
-        if opt in "update":
-            updateflag = True
-    else:
-        if not os.path.exists(os.path.expandvars(r'%APPDATA%\SHIP')):
-            os.makedirs(os.path.expandvars(r'%APPDATA%\SHIP'))
-        num_of_files = 0
-        with fileinput.FileInput(r'\\172.28.1.10\Dane\PUB\SHIP_Deployment\update.txt') as file:
-            for line in file:
-                if line.find("number_of_files") >= 0:
-                    val = line.split("=")
-                    if val.__len__() > 1:
-                        num_of_files = val[1]
-                    else:
-                        num_of_files = 0
 
-        copyTree(r'\\172.28.1.10\Dane\PUB\SHIP_Deployment', os.path.expandvars(r'%APPDATA%\SHIP'),
-                 r'\\172.28.1.10\Dane\PUB\SHIP_Deployment\update.txt', num_of_files)
-        with fileinput.FileInput(r'\\172.28.1.10\Dane\PUB\SHIP_Deployment\update.txt', inplace=True) as file:
-            for line in file:
-                if line.find("number_of_files") >= 0:
-                    newline = "number_of_files=" + str(FILE_COUNT)
-                    print(newline, end='')
+    if not os.path.exists(os.path.expandvars(r'%APPDATA%\SHIP')):
+        os.makedirs(os.path.expandvars(r'%APPDATA%\SHIP'))
+    num_of_files = 0
+    with fileinput.FileInput(r'\\172.28.1.10\Dane\PUB\SHIP_Deployment\update.txt') as file:
+        for line in file:
+            if line.find("number_of_files") >= 0:
+                val = line.split("=")
+                if val.__len__() > 1:
+                    num_of_files = val[1]
                 else:
-                    print(line, end='')
+                    num_of_files = 0
 
-        desktop = os.path.expanduser("~/Desktop")  # path to where you want to put the .lnk
-        path = os.path.join(desktop, 'SHIP.lnk')
-        target = os.path.expandvars(r'%APPDATA%\SHIP\SHIP.exe')
-        shell = win32com.client.Dispatch("WScript.Shell")
-        shortcut = shell.CreateShortCut(path)
-        shortcut.Targetpath = target
-        shortcut.WindowStyle = 7  # 7 - Minimized, 3 - Maximized, 1 - Normal
-        shortcut.save()
+    copyTree(r'\\172.28.1.10\Dane\PUB\SHIP_Deployment', os.path.expandvars(r'%APPDATA%\SHIP'),
+             r'\\172.28.1.10\Dane\PUB\SHIP_Deployment\update.txt', num_of_files)
+    with fileinput.FileInput(r'\\172.28.1.10\Dane\PUB\SHIP_Deployment\update.txt', inplace=True) as file:
+        for line in file:
+            if line.find("number_of_files") >= 0:
+                newline = "number_of_files=" + str(FILE_COUNT)
+                print(newline)
+            else:
+                print(line, end='')
 
-    if updateflag:
-        subprocess.Popen(r'%APPDATA%\SHIP\SHIP.exe', shell=True, stdin=None, stdout=None, stderr=None, close_fds=True)
+    desktop = os.path.expanduser("~/Desktop")  # path to where you want to put the .lnk
+    path = os.path.join(desktop, 'SHIP.lnk')
+    target = os.path.expandvars(r'%APPDATA%\SHIP\SHIP.exe')
+    shell = win32com.client.Dispatch("WScript.Shell")
+    shortcut = shell.CreateShortCut(path)
+    shortcut.Targetpath = target
+    shortcut.WindowStyle = 7  # 7 - Minimized, 3 - Maximized, 1 - Normal
+    shortcut.save()
+    subprocess.Popen(r'%APPDATA%\SHIP\SHIP.exe', shell=True, stdin=None, stdout=None, stderr=None, close_fds=True)
 
 
 if __name__ == "__main__":
-    main(sys.argv[1:])
+    main()

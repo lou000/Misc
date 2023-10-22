@@ -48,7 +48,7 @@ def forceMergeFlatDir(srcDir, dstDir, logfile, prevfilecount):
 
 def forceCopyFile(sfile, dfile, logfile, prevfilecount):
     global FILE_COUNT
-    if os.path.isfile(sfile) and not sfile == r'\\172.28.1.10\Dane\PUB\SHIP_Deployment\updt_SHIP.exe':
+    if os.path.isfile(sfile) and not sfile == r'updt_SHIP.exe':
         shutil.copy2(sfile, dfile)
         FILE_COUNT += 1
     print_progress(int(FILE_COUNT), int(prevfilecount), prefix='Progress:', suffix='Complete', bar_length=50,
@@ -86,7 +86,19 @@ def main():
     if not os.path.exists(os.path.expandvars(r'%APPDATA%\SHIP')):
         os.makedirs(os.path.expandvars(r'%APPDATA%\SHIP'))
     num_of_files = 0
-    with fileinput.FileInput(r'\\172.28.1.10\Dane\PUB\SHIP_Deployment\update.txt') as file:
+    remoteDir = r'\\serwer\Dane\PUB\SHIP_Deployment'
+
+    try:
+        with fileinput.FileInput(r'update.txt') as file:
+            for line in file:
+                if line.find("remote_update_location") >= 0:
+                    val = line.split("=")
+                    if val.__len__() > 1:
+                        remoteDir = val[1]
+    except FileNotFoundError:
+        print("No local update file")
+
+    with fileinput.FileInput(remoteDir+r'\update.txt') as file:
         for line in file:
             if line.find("number_of_files") >= 0:
                 val = line.split("=")
@@ -95,9 +107,9 @@ def main():
                 else:
                     num_of_files = 0
 
-    copyTree(r'\\172.28.1.10\Dane\PUB\SHIP_Deployment', os.path.expandvars(r'%APPDATA%\SHIP'),
-             r'\\172.28.1.10\Dane\PUB\SHIP_Deployment\update.txt', num_of_files)
-    with fileinput.FileInput(r'\\172.28.1.10\Dane\PUB\SHIP_Deployment\update.txt', inplace=True) as file:
+    copyTree(remoteDir, os.path.expandvars(r'%APPDATA%\SHIP'),
+             remoteDir+r'\update.txt', num_of_files)
+    with fileinput.FileInput(remoteDir+r'\update.txt', inplace=True) as file:
         for line in file:
             if line.find("number_of_files") >= 0:
                 newline = "number_of_files=" + str(FILE_COUNT)
@@ -113,7 +125,7 @@ def main():
     shortcut.Targetpath = target
     shortcut.WindowStyle = 7  # 7 - Minimized, 3 - Maximized, 1 - Normal
     shortcut.save()
-    subprocess.Popen(r'%APPDATA%\SHIP\SHIP.exe', shell=True, stdin=None, stdout=None, stderr=None, close_fds=True)
+    subprocess.Popen(r'%APPDATA%\SHIP\SHIP.exe', shell=True, stdin=None, stdout=None, stderr=None, close_fds=True, start_new_session=True)
 
 
 if __name__ == "__main__":
